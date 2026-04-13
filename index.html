@@ -315,7 +315,6 @@ function render() {
   }
   document.getElementById('statsRow').innerHTML = `
     <div class="stat stat-D"><span class="stat-lbl">出勤</span><span class="stat-val D">${cD}<span>日</span></span></div>
-    <div class="stat stat-N"><span class="stat-lbl">夜勤</span><span class="stat-val N">${cN}<span>日</span></span></div>
     <div class="stat stat-x"><span class="stat-lbl">休暇</span><span class="stat-val">${cX}<span>日</span></span></div>
   `;
 
@@ -347,18 +346,9 @@ function render() {
 
   const nextLabel = `${nextY}年${MONTH_NAMES[nextM]}`;
   document.getElementById('periodSection').innerHTML = `
-    <div class="period-card${todayInA?' active-period':''}">
-      <div>
-        <div class="period-label">締め期間 A</div>
-        <div class="period-range">${curYear}年${MONTH_NAMES[curMonth]} 1日 〜 15日</div>
-      </div>
-      <div>
-        <span class="period-amount${sumA>0?' has-value':''}">¥${fmt(sumA)}</span>
-      </div>
-    </div>
     <div class="period-card${todayInB?' active-period':''}">
       <div>
-        <div class="period-label">締め期間 B</div>
+        <div class="period-label">締め期間</div>
         <div class="period-range">${curYear}年${MONTH_NAMES[curMonth]} 16日 〜 ${nextLabel} 15日</div>
       </div>
       <div>
