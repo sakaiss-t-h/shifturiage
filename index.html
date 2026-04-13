@@ -146,6 +146,9 @@
   .dc.sat-text { color: rgba(26,111,207,0.55); }
   .dc.today { outline: 2.5px solid #1a6fcf; outline-offset: 2px; }
   .dc.N.today { outline-color: #a78bfa; }
+  .dc.holiday .day-num { color: var(--sun) !important; opacity: 0.9; }
+  .dc.D.holiday .day-num { color: #ffb3b0 !important; }
+  .dc.N.holiday .day-num { color: #ffb3b0 !important; }
   .dc.has-sales::after {
     content: '';
     position: absolute;
@@ -236,7 +239,6 @@
   <span class="app-title">シフト カレンダー</span>
   <div class="legend">
     <div class="legend-item"><div class="pip pip-D"></div>出勤</div>
-    <div class="legend-item"><div class="pip pip-N"></div>夜勤</div>
   </div>
 </div>
 
@@ -275,6 +277,32 @@
 </div>
 
 <script>
+// 日本の祝日 (YYYY-MM-DD)
+const HOLIDAYS = new Set([
+  // 2025
+  '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24','2025-03-20',
+  '2025-04-29','2025-05-03','2025-05-04','2025-05-05','2025-05-06',
+  '2025-07-21','2025-08-11','2025-09-15','2025-09-22','2025-09-23',
+  '2025-10-13','2025-11-03','2025-11-23','2025-11-24',
+  // 2026
+  '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20',
+  '2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
+  '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
+  '2026-10-12','2026-11-03','2026-11-23',
+  // 2027
+  '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-20',
+  '2027-04-29','2027-05-03','2027-05-04','2027-05-05',
+  '2027-07-19','2027-08-11','2027-09-20','2027-09-23',
+  '2027-10-11','2027-11-03','2027-11-23',
+  // 2028
+  '2028-01-01','2028-01-10','2028-02-11','2028-02-23','2028-03-20',
+  '2028-04-29','2028-05-03','2028-05-04','2028-05-05',
+  '2028-07-17','2028-08-11','2028-09-18','2028-09-22',
+  '2028-10-09','2028-11-03','2028-11-23',
+]);
+
+let salesVisible = true;
+
 const PATTERN = 'DxDxxxDxDxDxxDxDxDxDxDxx';
 const PATTERN_START = new Date(2026, 3, 6);
 const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
@@ -301,6 +329,11 @@ function getShift(date) {
 function dateKey(y, m, d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 
 function fmt(n) { return n.toLocaleString('ja-JP'); }
+
+function toggleSales() {
+  salesVisible = !salesVisible;
+  render();
+}
 
 function render() {
   document.getElementById('monthLabel').textContent = MONTH_NAMES[curMonth];
@@ -346,13 +379,13 @@ function render() {
 
   const nextLabel = `${nextY}年${MONTH_NAMES[nextM]}`;
   document.getElementById('periodSection').innerHTML = `
-    <div class="period-card${todayInB?' active-period':''}">
+    <div class="period-card${todayInB?' active-period':''}" id="periodToggle" onclick="toggleSales()" style="cursor:pointer;">
       <div>
-        <div class="period-label">締め期間</div>
+        <div class="period-label">締め期間 <span style="font-size:10px;color:var(--muted2)">${salesVisible?'（タップで非表示）':'（タップで表示）'}</span></div>
         <div class="period-range">${curYear}年${MONTH_NAMES[curMonth]} 16日 〜 ${nextLabel} 15日</div>
       </div>
       <div>
-        <span class="period-amount${sumB>0?' has-value':''}">¥${fmt(sumB)}</span>
+        <span class="period-amount${sumB>0?' has-value':''}">${salesVisible ? '¥'+fmt(sumB) : '¥ ――'}</span>
       </div>
     </div>
   `;
@@ -376,14 +409,16 @@ function render() {
     const sales = salesData[key];
 
     const cell = document.createElement('div');
+    const isHoliday = HOLIDAYS.has(dateKey(curYear, curMonth, d));
     let cls = 'dc';
     if(shift==='D') cls += ' D';
     else if(shift==='N') cls += ' N';
     else {
       cls += ' rest';
-      if(dow===0) cls += ' sun-text';
+      if(dow===0 || isHoliday) cls += ' sun-text';
       else if(dow===6) cls += ' sat-text';
     }
+    if(isHoliday && (shift==='D' || shift==='N')) cls += ' holiday';
     if(today.getFullYear()===curYear && today.getMonth()===curMonth && today.getDate()===d) cls += ' today';
     if(sales) cls += ' has-sales';
     cell.className = cls;
@@ -400,7 +435,7 @@ function render() {
       cell.appendChild(badge);
     }
 
-    if(sales) {
+    if(sales && salesVisible) {
       const s = document.createElement('span');
       s.className = 'sales-dot-num';
       s.textContent = sales >= 10000 ? `${Math.round(sales/1000)}k` : `${sales}`;
