@@ -341,14 +341,27 @@ function render() {
 
   const daysInMonth = new Date(curYear, curMonth + 1, 0).getDate();
   const firstDay = new Date(curYear, curMonth, 1).getDay();
+  // 締め期間（当月16日〜翌月15日）の出勤・休暇カウント
   let cD=0, cN=0, cX=0;
-  for (let d=1; d<=daysInMonth; d++) {
+  // 当月16日〜末日
+  for (let d=16; d<=daysInMonth; d++) {
     const s = getShift(new Date(curYear, curMonth, d));
     if(s==='D') cD++; else if(s==='N') cN++; else cX++;
   }
+  // 翌月1日〜15日
+  let nextYc = curYear, nextMc = curMonth + 1;
+  if(nextMc > 11) { nextMc = 0; nextYc++; }
+  const nextDaysC = new Date(nextYc, nextMc + 1, 0).getDate();
+  for (let d=1; d<=15 && d<=nextDaysC; d++) {
+    const s = getShift(new Date(nextYc, nextMc, d));
+    if(s==='D') cD++; else if(s==='N') cN++; else cX++;
+  }
+  const nextLabelC = `${nextYc}年${MONTH_NAMES[nextMc]}`;
+  const periodRangeLabel = `${curYear}年${MONTH_NAMES[curMonth]}16日 〜 ${nextLabelC}15日`;
   document.getElementById('statsRow').innerHTML = `
     <div class="stat stat-D"><span class="stat-lbl">出勤</span><span class="stat-val D">${cD}<span>日</span></span></div>
     <div class="stat stat-x"><span class="stat-lbl">休暇</span><span class="stat-val">${cX}<span>日</span></span></div>
+    <div style="width:100%;text-align:center;font-size:10px;color:var(--muted2);padding:6px 0 2px;letter-spacing:0.03em;">${periodRangeLabel}</div>
   `;
 
   // 締め期間の集計
